@@ -14,17 +14,20 @@ export default async function DashboardLayout({
     redirect('/login')
   }
   
-  // Get user profile with role
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, name')
     .eq('id', user.id)
     .single()
   
+  if (!profile) {
+    redirect('/login')
+  }
+  
   return (
-    <div className="flex h-screen">
-      <Sidebar user={{ name: profile?.name || 'User', role: profile?.role || 'agent' }} />
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar user={{ name: profile.name, role: profile.role }} />
+      <main className="flex-1 overflow-y-auto p-6">
         {children}
       </main>
     </div>

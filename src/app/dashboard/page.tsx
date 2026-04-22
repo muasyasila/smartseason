@@ -5,31 +5,8 @@ import { StatusChart } from '@/components/dashboard/status-chart'
 import { CropChart } from '@/components/dashboard/crop-chart'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { AtRiskAlerts } from '@/components/dashboard/at-risk-alerts'
-import { Suspense } from 'react'
 
-// Loading component
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-gray-200" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 animate-pulse rounded-xl bg-gray-100" />
-        ))}
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="h-80 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-80 animate-pulse rounded-xl bg-gray-100" />
-      </div>
-    </div>
-  )
-}
-
-// Main dashboard component with error handling
-async function DashboardContent() {
+export default async function DashboardPage() {
   const supabase = await createServerClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -41,7 +18,6 @@ async function DashboardContent() {
     .eq('id', user.id)
     .single()
   
-  // Build query based on role
   let fieldsQuery = supabase.from('fields').select('*')
   if (profile?.role === 'agent') {
     fieldsQuery = fieldsQuery.eq('agent_id', user.id)
@@ -49,7 +25,6 @@ async function DashboardContent() {
   
   const { data: fields } = await fieldsQuery
   
-  // Calculate stats
   const totalFields = fields?.length || 0
   const activeFields = fields?.filter(f => f.status === 'Active').length || 0
   const atRiskFields = fields?.filter(f => f.status === 'At Risk').length || 0
@@ -61,88 +36,64 @@ async function DashboardContent() {
     Completed: completedFields 
   }
   
-  // Crop distribution
   const cropDistribution = fields?.reduce((acc, field) => {
     acc[field.crop_type] = (acc[field.crop_type] || 0) + 1
     return acc
   }, {} as Record<string, number>) || {}
   
-  // Get recent activities
   const { data: recentActivities } = await supabase
     .from('activity_logs')
-    .select(`
-      id,
-      action,
-      details,
-      created_at
-    `)
+    .select('id, action, details, created_at')
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(5)
   
-  // Get user names separately to avoid relation issues
-  const formattedActivities = await Promise.all((recentActivities || []).map(async (activity) => {
-    let userName = 'System'
-    if (activity.details?.user_id) {
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', activity.details.user_id)
-        .single()
-      if (userData) {
-        userName = userData.name
-      }
-    }
-    return {
-      id: activity.id,
-      action: activity.action,
-      user: userName,
-      details: activity.details || {},
-      timestamp: activity.created_at,
-    }
-  }))
+  const formattedActivities = recentActivities?.map(activity => ({
+    id: activity.id,
+    action: activity.action,
+    user: 'System',
+    details: activity.details || {},
+    timestamp: activity.created_at,
+  })) || []
   
-  // Get at-risk fields
   const atRiskFieldsList = fields?.filter(f => f.status === 'At Risk') || []
-  
-  // Get user name for welcome message
   const userName = profile?.name?.split(' ')[0] || 'User'
   
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+  
   return (
-    <>
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">
-          Welcome back, {userName}! Here's your farm overview.
-        </p>
+    <div className="p-6 space-y-6">
+      <div className="animate-fade-up">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Good {greeting}, <span className="text-emerald-600">{userName}</span>
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">Here's what's happening with your fields today.</p>
       </div>
       
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <DashboardStats
-          total={totalFields}
-          active={activeFields}
-          atRisk={atRiskFields}
-          completed={completedFields}
-        />
+      <DashboardStats
+        total={totalFields}
+        active={activeFields}
+        atRisk={atRiskFields}
+        completed={completedFields}
+      />
+      
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="animate-fade-up" style={{ animationDelay: '100ms' }}>
+          <StatusChart data={statusBreakdown} />
+        </div>
+        <div className="animate-fade-up" style={{ animationDelay: '150ms' }}>
+          <CropChart data={cropDistribution} />
+        </div>
       </div>
       
       <div className="grid gap-6 lg:grid-cols-2">
-        <StatusChart data={statusBreakdown} />
-        <CropChart data={cropDistribution} />
+        <div className="animate-fade-up" style={{ animationDelay: '200ms' }}>
+          <RecentActivity activities={formattedActivities} />
+        </div>
+        <div className="animate-fade-up" style={{ animationDelay: '250ms' }}>
+          <AtRiskAlerts fields={atRiskFieldsList} />
+        </div>
       </div>
-      
-      <div className="grid gap-6 lg:grid-cols-2">
-        <RecentActivity activities={formattedActivities} />
-        <AtRiskAlerts fields={atRiskFieldsList} />
-      </div>
-    </>
-  )
-}
-
-// Main dashboard page with Suspense for loading
-export default async function DashboardPage() {
-  return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardContent />
-    </Suspense>
+    </div>
   )
 }

@@ -5,9 +5,9 @@ import { StatusBadge } from './status-badge'
 import { StageProgress } from './stage-progress'
 import { UpdateFieldModal } from './update-field-modal'
 import { ViewFieldModal } from './view-field-modal'
-import { EditFieldModal } from './edit-field-modal'
 import { ActionDropdown } from './action-dropdown'
-import { Sprout } from 'lucide-react'
+import { Sprout, Plus } from 'lucide-react'
+import { CreateFieldButton } from './create-field-button'
 
 interface Field {
   id: string
@@ -34,7 +34,6 @@ export function FieldsTable({ fields, isAdmin }: FieldsTableProps) {
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-KE', {
@@ -59,105 +58,93 @@ export function FieldsTable({ fields, isAdmin }: FieldsTableProps) {
     setShowEditModal(true)
   }
 
-  const handleDelete = (field: Field) => {
-    setSelectedField(field)
-    setShowDeleteConfirm(true)
-  }
-
   if (fields.length === 0) {
     return (
-      <div className="rounded-xl bg-white p-12 text-center shadow-sm border border-gray-100">
-        <div className="flex flex-col items-center">
-          <div className="rounded-full bg-green-100 p-4">
-            <Sprout className="h-8 w-8 text-green-600" />
-          </div>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No fields yet</h3>
-          <p className="mt-2 text-gray-500">
-            {isAdmin 
-              ? "Get started by creating your first field." 
-              : "Fields assigned to you will appear here."}
-          </p>
+      <div className="flex flex-col items-center justify-center rounded-xl bg-white py-16 px-4 text-center border border-gray-100">
+        <div className="rounded-full bg-gray-50 p-3 mb-4">
+          <Sprout className="h-6 w-6 text-gray-400" />
         </div>
+        <h3 className="text-base font-medium text-gray-900">No fields yet</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          {isAdmin 
+            ? "Get started by creating your first field." 
+            : "Fields assigned to you will appear here."}
+        </p>
+        {isAdmin && (
+          <div className="mt-4">
+            <CreateFieldButton />
+          </div>
+        )}
       </div>
     )
   }
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100">
+      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Field Name
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Field
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Crop
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Progress
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Planting Date
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Planted
                 </th>
                 {isAdmin && (
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Agent
                   </th>
                 )}
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-50">
               {fields.map((field) => (
-                <tr key={field.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="whitespace-nowrap px-6 py-4">
+                <tr key={field.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4">
                     <div className="font-medium text-gray-900">{field.name}</div>
+                    {field.location && (
+                      <div className="text-xs text-gray-400 mt-0.5">{field.location}</div>
+                    )}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-sm text-gray-700">
-                      {field.crop_type === 'Maize' && '🌽'}
-                      {field.crop_type === 'Beans' && '🫘'}
-                      {field.crop_type === 'Wheat' && '🌾'}
-                      {field.crop_type === 'Rice' && '🍚'}
-                      {field.crop_type === 'Soybeans' && '🫛'}
-                      {field.crop_type}
-                    </span>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {field.crop_type}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                    {field.location || '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="px-6 py-4">
                     <StageProgress currentStage={field.current_stage} />
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
+                  <td className="px-6 py-4">
                     <StatusBadge status={field.status} />
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {formatDate(field.planting_date)}
                   </td>
                   {isAdmin && (
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                      {field.agent?.name || 'Unassigned'}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {field.agent?.name || '—'}
                     </td>
                   )}
-                  <td className="whitespace-nowrap px-6 py-4 text-center">
+                  <td className="px-6 py-4 text-right">
                     <ActionDropdown
                       field={field}
                       isAdmin={isAdmin}
                       onUpdate={handleUpdate}
                       onView={handleViewDetails}
                       onEdit={handleEdit}
-                      onDelete={handleDelete}
+                      onDelete={() => {}}
                     />
                   </td>
                 </tr>
@@ -167,7 +154,7 @@ export function FieldsTable({ fields, isAdmin }: FieldsTableProps) {
         </div>
       </div>
 
-      {/* Update Modal */}
+      {/* Modals */}
       {showUpdateModal && selectedField && (
         <UpdateFieldModal
           isOpen={showUpdateModal}
@@ -179,7 +166,6 @@ export function FieldsTable({ fields, isAdmin }: FieldsTableProps) {
         />
       )}
 
-      {/* View Details Modal */}
       {showViewModal && selectedField && (
         <ViewFieldModal
           isOpen={showViewModal}
@@ -188,22 +174,6 @@ export function FieldsTable({ fields, isAdmin }: FieldsTableProps) {
             setSelectedField(null)
           }}
           field={selectedField}
-        />
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && selectedField && (
-        <EditFieldModal
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false)
-            setSelectedField(null)
-          }}
-          field={selectedField}
-          onSuccess={() => {
-            setShowEditModal(false)
-            setSelectedField(null)
-          }}
         />
       )}
     </>

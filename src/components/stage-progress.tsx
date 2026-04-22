@@ -13,15 +13,14 @@ export function StageProgress({ currentStage }: StageProgressProps) {
       {stages.map((stage, idx) => (
         <div key={stage} className="flex items-center">
           <div
-            className={`h-2 w-6 rounded-full transition-all duration-300 ${
-              idx <= currentIndex ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gray-200'
+            className={`h-1.5 w-5 rounded-full transition-all ${
+              idx <= currentIndex ? 'bg-gray-700' : 'bg-gray-200'
             }`}
-            title={stage}
           />
           {idx < stages.length - 1 && (
             <div
-              className={`h-0.5 w-3 transition-all duration-300 ${
-                idx < currentIndex ? 'bg-green-400' : 'bg-gray-200'
+              className={`h-px w-3 transition-all ${
+                idx < currentIndex ? 'bg-gray-300' : 'bg-gray-200'
               }`}
             />
           )}

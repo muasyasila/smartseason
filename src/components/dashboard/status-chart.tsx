@@ -1,6 +1,8 @@
 'use client'
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { motion } from 'framer-motion'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react'
 
 interface StatusChartProps {
   data: {
@@ -11,35 +13,54 @@ interface StatusChartProps {
 }
 
 const COLORS = {
-  Active: '#22c55e',
-  'At Risk': '#ef4444',
-  Completed: '#8b5cf6',
+  Active: '#10b981',
+  'At Risk': '#f43f5e',
+  Completed: '#3b82f6',
+}
+
+const STATUS_CONFIG = {
+  Active: {
+    label: 'Active',
+    color: COLORS.Active,
+    icon: TrendingUp,
+    textColor: 'text-emerald-600',
+  },
+  'At Risk': {
+    label: 'At Risk',
+    color: COLORS['At Risk'],
+    icon: AlertTriangle,
+    textColor: 'text-rose-600',
+  },
+  Completed: {
+    label: 'Completed',
+    color: COLORS.Completed,
+    icon: CheckCircle,
+    textColor: 'text-blue-600',
+  },
 }
 
 export function StatusChart({ data }: StatusChartProps) {
-  // Prepare data - include all statuses even if zero
-  const chartData = [
-    { name: 'Active', value: data.Active, icon: '🌱', color: COLORS.Active },
-    { name: 'At Risk', value: data['At Risk'], icon: '⚠️', color: COLORS['At Risk'] },
-    { name: 'Completed', value: data.Completed, icon: '✅', color: COLORS.Completed },
-  ]
+  const chartData = Object.entries(data)
+    .filter(([, value]) => value > 0)
+    .map(([name, value]) => ({ name, value, color: COLORS[name as keyof typeof COLORS] }))
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0)
 
-  // If no data
   if (total === 0) {
     return (
-      <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Field Status Distribution</h3>
-          <p className="text-sm text-gray-500">Overview of all field conditions</p>
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Field Status</h3>
+            <p className="text-sm text-gray-500 mt-0.5">Distribution by condition</p>
+          </div>
         </div>
-        <div className="flex h-64 items-center justify-center">
+        <div className="flex h-80 items-center justify-center">
           <div className="text-center">
-            <div className="rounded-full bg-gray-100 p-4 mx-auto w-16 h-16 flex items-center justify-center">
-              <span className="text-2xl">📊</span>
+            <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
+              <TrendingUp className="h-8 w-8 text-gray-400" />
             </div>
-            <p className="mt-3 text-sm text-gray-500">No field data available</p>
+            <p className="mt-3 text-sm text-gray-500">No data available</p>
             <p className="text-xs text-gray-400">Create fields to see distribution</p>
           </div>
         </div>
@@ -47,121 +68,120 @@ export function StatusChart({ data }: StatusChartProps) {
     )
   }
 
-  // Custom label renderer - positions labels outside the pie chart
-  const renderCustomLabel = (entry: any) => {
-    const percentage = ((entry.value / total) * 100).toFixed(1)
-    // Only show labels for segments with > 5% to avoid clutter
-    if (parseFloat(percentage) < 5) return ''
-    return `${percentage}%`
-  }
-
-  // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const dataItem = payload[0].payload
-      const percentage = ((dataItem.value / total) * 100).toFixed(1)
+      const percentage = ((payload[0].value / total) * 100).toFixed(1)
+      const config = STATUS_CONFIG[payload[0].name as keyof typeof STATUS_CONFIG]
+      const Icon = config?.icon
+      
       return (
-        <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-          <p className="text-sm font-medium text-gray-900">
-            {dataItem.icon} {dataItem.name}
-          </p>
-          <p className="text-lg font-bold text-gray-900">{dataItem.value} fields</p>
-          <p className="text-xs text-gray-500">{percentage}% of total</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+          className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-lg"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
+            {Icon && <Icon className={`h-3.5 w-3.5 ${config?.textColor}`} />}
+            <p className="text-sm font-semibold text-gray-900">{payload[0].name}</p>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{payload[0].value}</p>
+          <p className="text-xs text-gray-500 mt-1">{percentage}% of total fields</p>
+        </motion.div>
       )
     }
     return null
   }
 
-  // Custom legend content
-  const renderLegendContent = (props: any) => {
-    const { payload } = props
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+    const RADIAN = Math.PI / 180
+    const radius = outerRadius * 1.15
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+    const percentage = (percent * 100).toFixed(0)
+    
+    if (percent < 0.05) return null
+    
     return (
-      <ul className="flex flex-wrap justify-center gap-4 mt-4">
-        {payload.map((entry: any, index: number) => {
-          const percentage = ((entry.payload.value / total) * 100).toFixed(1)
-          return (
-            <li key={`item-${index}`} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="text-sm text-gray-700">{entry.value}</span>
-              <span className="text-xs text-gray-500">({percentage}%)</span>
-            </li>
-          )
-        })}
-      </ul>
+      <text
+        x={x}
+        y={y}
+        fill="#6b7280"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        className="text-xs font-medium"
+      >
+        {percentage}%
+      </text>
     )
   }
 
-  // Filter out zero values for the pie chart
-  const nonZeroData = chartData.filter(item => item.value > 0)
-
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Field Status Distribution</h3>
-        <p className="text-sm text-gray-500">Overview of all field conditions</p>
-      </div>
-      
-      {/* Summary Stats Row */}
-      <div className="mb-6 grid grid-cols-3 gap-4 pb-4 border-b border-gray-100">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-gray-900">{total}</p>
-          <p className="text-xs text-gray-500">Total Fields</p>
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">Field Status</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Distribution by condition</p>
         </div>
-        <div className="text-center border-l border-gray-200">
-          <p className="text-2xl font-bold text-green-600">{data.Active}</p>
-          <p className="text-xs text-gray-500">Active</p>
-        </div>
-        <div className="text-center border-l border-gray-200">
-          <p className="text-2xl font-bold text-purple-600">{data.Completed}</p>
-          <p className="text-xs text-gray-500">Completed</p>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center">
+            <span className="text-xs font-medium text-gray-600">{total}</span>
+          </div>
+          <span className="text-xs text-gray-400">total fields</span>
         </div>
       </div>
-      
-      <div className="h-80">
+
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={nonZeroData}
+              data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={50}
-              outerRadius={90}
-              paddingAngle={3}
+              innerRadius={60}
+              outerRadius={85}
+              paddingAngle={4}
               dataKey="value"
+              labelLine={false}
               label={renderCustomLabel}
-              labelLine={{ stroke: '#9ca3af', strokeWidth: 1, strokeDasharray: '3 3' }}
+              stroke="white"
+              strokeWidth={3}
+              animationBegin={0}
+              animationDuration={800}
+              animationEasing="ease-out"
             >
-              {nonZeroData.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.color} 
-                  stroke="white"
-                  strokeWidth={2}
+                  fill={entry.color}
+                  style={{
+                    filter: `drop-shadow(0 4px 6px ${entry.color}40)`,
+                  }}
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              verticalAlign="bottom" 
-              height={60}
-              content={renderLegendContent}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
           </PieChart>
         </ResponsiveContainer>
       </div>
-      
-      {/* At Risk Alert */}
-      {data['At Risk'] > 0 && (
-        <div className="mt-4 rounded-lg bg-red-50 p-3 border border-red-100">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <p className="text-sm text-red-800">
-              <span className="font-semibold">{data['At Risk']}</span> field{data['At Risk'] !== 1 ? 's are' : ' is'} at risk and needs attention
-            </p>
-          </div>
-        </div>
-      )}
+
+      {/* Simple Legend - One Line */}
+      <div className="mt-6 flex justify-center gap-6">
+        {chartData.map((item) => {
+          const config = STATUS_CONFIG[item.name as keyof typeof STATUS_CONFIG]
+          const percentage = ((item.value / total) * 100).toFixed(0)
+          
+          return (
+            <div key={item.name} className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-xs font-medium text-gray-600">{config?.label}</span>
+              <span className="text-xs font-semibold text-gray-900">{percentage}%</span>
+              <span className="text-xs text-gray-400">({item.value})</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

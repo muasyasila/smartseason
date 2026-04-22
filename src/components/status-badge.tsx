@@ -6,16 +6,31 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = {
-    Active: { color: 'bg-green-100 text-green-800', icon: '🌱', border: 'border-green-200' },
-    'At Risk': { color: 'bg-red-100 text-red-800', icon: '⚠️', border: 'border-red-200' },
-    Completed: { color: 'bg-blue-100 text-blue-800', icon: '✅', border: 'border-blue-200' },
+    Active: { 
+      bg: 'bg-green-50', 
+      text: 'text-green-700',
+      border: 'border-green-200',
+      dot: 'bg-green-500'
+    },
+    'At Risk': { 
+      bg: 'bg-red-50', 
+      text: 'text-red-700',
+      border: 'border-red-200',
+      dot: 'bg-red-500'
+    },
+    Completed: { 
+      bg: 'bg-blue-50', 
+      text: 'text-blue-700',
+      border: 'border-blue-200',
+      dot: 'bg-blue-500'
+    },
   }
   
-  const { color, icon, border } = config[status as keyof typeof config] || config.Active
+  const { bg, text, border, dot } = config[status as keyof typeof config] || config.Active
   
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${color} ${border}`}>
-      <span>{icon}</span>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${bg} ${text} ${border}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {status}
     </span>
   )
