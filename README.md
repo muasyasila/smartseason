@@ -28,7 +28,7 @@ SmartSeason provides:
 - **Complete audit trail** of all field updates
 - **Beautiful, intuitive dashboard** with analytics
 
-##  Features
+## Features
 
 ### Core Functionality
 
@@ -115,7 +115,6 @@ Fields are automatically classified into three statuses:
 
 **Why 60 days?** Based on typical maize growing cycles in Kenya (90-120 days total). The 60-day threshold provides a 30-day warning window before expected harvest, allowing timely intervention.
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -196,8 +195,6 @@ http://localhost:3000
 | **Admin** | admin@demo.com | Admin123! | Create fields, view all, assign agents, delete fields |
 | **Agent** | agent@demo.com | Agent123! | Update assigned fields, add notes, view own fields |
 
-
-
 ## Testing the Application
 
 ### Manual Test Cases
@@ -228,7 +225,6 @@ http://localhost:3000
 - Filters work correctly
 - CSV export functions
 
-
 ## Assumptions Made
 
 1. The 60-day threshold for "At Risk" status assumes a standard 90-120 day growing cycle for maize, the most common crop in the assessment region
@@ -246,9 +242,18 @@ http://localhost:3000
 | `/api/fields/[id]` | GET | Get field details | Yes |
 | `/api/health` | GET | Health check | No |
 
+## Submission
 
-**Live deployment link:** [To Be added]
+This project was completed for the Shamba Records Software Engineer Intern position.
 
+**Submission includes:**
+- GitHub repository with complete source code
+- This README with setup instructions and design decisions
+- Demo credentials provided above
+
+**Live deployment link:** [smartseason-one.vercel.app](https://smartseason-one.vercel.app)
+
+---
 
 **Built for Kenyan agriculture**
 
